@@ -8,7 +8,17 @@
     <link name="base_link">
     </link>
 
-    <joint name="base_link" type="fixed">
+    <joint name="base_footprint_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="base_footprint"/>
+        <origin xyz="0 0 0"/>    
+    </joint>
+
+    <!-- Example link -->
+    <link name="base_footprint">
+    </link>
+
+      <joint name="base_link" type="fixed">
         <parent link="base_link"/>
         <child link="chassis"/>
         <origin xyz="-0.1 0 0"/>    
