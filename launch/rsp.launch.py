@@ -14,6 +14,17 @@ def generate_launch_description():
 
     # Check if we're told to use sim time
     use_sim_time = LaunchConfiguration('use_sim_time')
+    agent_ns = LaunchConfiguration('agent_ns')
+
+    use_sim_time_launch_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false'
+    )
+
+    agent_ns_launch_arg = DeclareLaunchArgument(
+        'agent_ns',
+        default_value=''
+    )
 
     # Process the URDF file
     pkg_path = os.path.join(get_package_share_directory('f112th_sim_2401_echo'))
@@ -24,6 +35,7 @@ def generate_launch_description():
     params = {'robot_description': robot_description_config.toxml(), 'use_sim_time': use_sim_time}
     node_robot_state_publisher = Node(
         package='robot_state_publisher',
+        namespace=agent_ns,
         executable='robot_state_publisher',
         output='screen',
         parameters=[params]
@@ -32,10 +44,7 @@ def generate_launch_description():
 
     # Launch!
     return LaunchDescription([
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value='false',
-            description='Use sim time if true'),
-
+        use_sim_time_launch_arg,
+        agent_ns_launch_arg,
         node_robot_state_publisher
     ])

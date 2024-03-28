@@ -30,6 +30,8 @@ def generate_launch_description():
     # Get the launch directory
     bringup_dir = get_package_share_directory('f112th_sim_2401_echo')
 
+
+    # Declare the launch arguments "parameters"
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
@@ -40,6 +42,7 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
+    # state machine for nodes
     lifecycle_nodes = ['controller_server',
                        'smoother_server',
                        'planner_server',
@@ -70,9 +73,11 @@ def generate_launch_description():
             convert_types=True),
         allow_substs=True)
 
+    #
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
 
+   # Declare the launch arguments
     declare_namespace_cmd = DeclareLaunchArgument(
         'namespace',
         default_value='',
@@ -107,92 +112,103 @@ def generate_launch_description():
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
+    
 
+    # Node definition
+    # Create instances of your path planning, obstacle avoidance, and motion control nodes
+    nav2_controller_server_node = Node(package='nav2_controller',
+                                        executable='controller_server',
+                                        output='screen',
+                                        respawn=use_respawn,
+                                        respawn_delay=2.0,
+                                        parameters=[configured_params],
+                                        arguments=['--ros-args', '--log-level', log_level],
+                                        remappings=remappings + [('cmd_vel', 'cmd_vel_nav')])
+    # 
+    smoother_server_node = Node(package='nav2_smoother',
+                                executable='smoother_server',
+                                name='smoother_server',
+                                output='screen',
+                                respawn=use_respawn,
+                                respawn_delay=2.0,
+                                parameters=[configured_params],
+                                arguments=['--ros-args', '--log-level', log_level],
+                                remappings=remappings)
+   
+    planner_server_node = Node(package='nav2_planner',
+                                executable='planner_server',
+                                name='planner_server',
+                                output='screen',
+                                respawn=use_respawn,
+                                respawn_delay=2.0,
+                                parameters=[configured_params],
+                                arguments=['--ros-args', '--log-level', log_level],
+                                remappings=remappings)
+   
+    behavior_server_node = Node(package='nav2_behaviors',
+                                executable='behavior_server',
+                                name='behavior_server',
+                                output='screen',
+                                respawn=use_respawn,
+                                respawn_delay=2.0,
+                                parameters=[configured_params],
+                                arguments=['--ros-args', '--log-level', log_level],
+                                remappings=remappings)
+    
+    bt_navigator_node = Node(package='nav2_bt_navigator',
+                            executable='bt_navigator',
+                            name='bt_navigator',
+                            output='screen',
+                            respawn=use_respawn,
+                            respawn_delay=2.0,
+                            parameters=[configured_params],
+                            arguments=['--ros-args', '--log-level', log_level],
+                            remappings=remappings)
+
+    waypoint_follower_node = Node(package='nav2_waypoint_follower',
+                                    executable='waypoint_follower',
+                                    name='waypoint_follower',
+                                    output='screen',
+                                    respawn=use_respawn,
+                                    respawn_delay=2.0,
+                                    parameters=[configured_params],
+                                    arguments=['--ros-args', '--log-level', log_level],
+                                    remappings=remappings)
+
+    velocity_smoother_node = Node(package='nav2_velocity_smoother',
+                                    executable='velocity_smoother',
+                                    name='velocity_smoother',
+                                    output='screen',
+                                    respawn=use_respawn,
+                                    respawn_delay=2.0,
+                                    parameters=[configured_params],
+                                    arguments=['--ros-args', '--log-level', log_level],
+                                    remappings=remappings +
+                                            [('cmd_vel', 'cmd_vel_nav'), ('cmd_vel_smoothed', 'cmd_vel')])
+
+
+    lifecycle_manager_navigation_node = Node(package='nav2_lifecycle_manager',
+                                            executable='lifecycle_manager',
+                                            name='lifecycle_manager_navigation',
+                                            output='screen',
+                                            arguments=['--ros-args', '--log-level', log_level],
+                                            parameters=[{'use_sim_time': use_sim_time},
+                                                        {'autostart': autostart},
+                                                        {'node_names': lifecycle_nodes}])
+    # Specify the actions
+    # The actions here are the nodes that will be launched
     load_nodes = GroupAction(
         condition=IfCondition(PythonExpression(['not ', use_composition])),
-        actions=[
-            Node(
-                package='nav2_controller',
-                executable='controller_server',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings + [('cmd_vel', 'cmd_vel_nav')]),
-            Node(
-                package='nav2_smoother',
-                executable='smoother_server',
-                name='smoother_server',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
-            Node(
-                package='nav2_planner',
-                executable='planner_server',
-                name='planner_server',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
-            Node(
-                package='nav2_behaviors',
-                executable='behavior_server',
-                name='behavior_server',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
-            Node(
-                package='nav2_bt_navigator',
-                executable='bt_navigator',
-                name='bt_navigator',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
-            Node(
-                package='nav2_waypoint_follower',
-                executable='waypoint_follower',
-                name='waypoint_follower',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings),
-            Node(
-                package='nav2_velocity_smoother',
-                executable='velocity_smoother',
-                name='velocity_smoother',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings +
-                        [('cmd_vel', 'cmd_vel_nav'), ('cmd_vel_smoothed', 'cmd_vel')]),
-            Node(
-                package='nav2_lifecycle_manager',
-                executable='lifecycle_manager',
-                name='lifecycle_manager_navigation',
-                output='screen',
-                arguments=['--ros-args', '--log-level', log_level],
-                parameters=[{'use_sim_time': use_sim_time},
-                            {'autostart': autostart},
-                            {'node_names': lifecycle_nodes}]),
-        ]
-    )
+        actions=[nav2_controller_server_node,
+                 smoother_server_node,
+                 planner_server_node,
+                 behavior_server_node,
+                 bt_navigator_node,
+                 waypoint_follower_node,
+                 velocity_smoother_node,
+                 lifecycle_manager_navigation_node])
 
+    # Composable node for the navigation stack
     load_composable_nodes = LoadComposableNodes(
         condition=IfCondition(use_composition),
         target_container=container_name_full,
